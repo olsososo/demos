@@ -56,7 +56,7 @@ class PoetryProtocol(Protocol):
 		self.poem += data
 	
 	def connectionLost(self,reason):
-		self.poemReceived(self,poem)
+		self.poemReceived(self.poem)
 
 	def poemReceived(self,poem):
 		self.factory.poem_finished(poem)
@@ -75,7 +75,7 @@ class PoetryClientFactory(ClientFactory):
 
 	def clientConnectionFailed(self,connector,reason):
 		if self.deferred is not None:
-			d,self.deferred = self.referred,None
+			d, self.deferred = self.deferred, None
 			d.errback(reason)	
 
 
