@@ -32,7 +32,7 @@ class PoetrySocket(object):
 		self.task_num = task_num
 		self.address = address
 		self.sock = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
-		self.socket.connect(address)
+		self.sock.connect(address)
 		self.sock.setblocking(0)
 
 		from twisted.internet import reactor
@@ -40,7 +40,7 @@ class PoetrySocket(object):
 	
 	def fileno(self):
 		try:
-			return self.socket.fileno()
+			return self.sock.fileno()
 		except socket.error:
 			return -1
 	
@@ -67,7 +67,7 @@ class PoetrySocket(object):
 				else:
 					bytes += bytesread
 			except socket.error,e:
-				if a.args[0] == errno.EWOULDBLOCK:
+				if e.args[0] == errno.EWOULDBLOCK:
 					break
 				return main.CONNECTION_LOST
 			
@@ -76,7 +76,7 @@ class PoetrySocket(object):
 				return main.CONNECTION_DONE
 			else:
 				msg = "Task %d:got %d bytes of poetry from %s"
-				print msg %(self.task_num,len(bytes),self.format_addr)
+				print msg %(self.task_num,len(bytes),self.format_addr())
 		
 			self.poem += bytes
 	
