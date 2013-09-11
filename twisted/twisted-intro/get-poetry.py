@@ -1,4 +1,4 @@
-import optparse
+import optparse,sys
 
 from twisted.internet.protocol import Protocol, ClientFactory
 
@@ -62,17 +62,21 @@ class PoetryClientFactory(ClientFactory):
 	
 	protocol = PoetryProtocol
 
-	def __init__(self,callback):
+	def __init__(self,callback,errback):
 		self.callback = callback
+		self.errback = errback
 
 	def poem_finished(self,poem):
 		self.callback(poem)
 
+	def clientConnectionFailed(self,connector,reason):
+		self.errback(reason)
 
-def get_poetry(host,port,callback):
+
+def get_poetry(host,port,callback,errback):
 	from twisted.internet import reactor
-	factory = PoetryClientFactory(callback)
-	reactory.connectTCP(host,port,factory)
+	factory = PoetryClientFactory(callback,errback)
+	reactor.connectTCP(host,port,factory)
 
 
 def poetry_main():
@@ -81,15 +85,24 @@ def poetry_main():
 	from twisted.internet import reactor
 	
 	poems = []
+	errors = []
 
-	def get_poem(poem):
+	def got_poem(poem):
 		poems.append(poem)
-		if len(poems) == len(addresses):
+		poem_done()		
+
+	def poem_failed(err):
+		print >>sys.stderr,'Poem failed:',err
+		errors.append(err)
+		poem_done()
+	
+	def poem_done():
+		if len(poems) + len(errors) == len(addresses):
 			reactor.stop()
 
 	for address in addresses:
 		host,port = address
-		get_poetry(host,port,got_poem)
+		get_poetry(host,port,got_poem,poem_failed)
 
 	reactor.run()
 
