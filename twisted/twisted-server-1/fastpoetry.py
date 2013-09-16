@@ -56,10 +56,13 @@ class PoetryFactory(ServerFactory):
 
 
 def main():
-	options,poetry = parse_args()
+	options,poetry_file = parse_args()
 	
 	poem = open(poetry_file).read()
+	
+	print poem 
 
+	return
 	factory = PoetryFactory(poem)
 
 	from twisted.internet import reactor

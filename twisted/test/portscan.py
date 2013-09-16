@@ -1,0 +1,24 @@
+import sys
+
+from twisted.internet import reactor,defer
+from connectiontester import testConnect
+
+
+def handleAllResults(results,ports):
+	for port,resultinfo in zip(ports,results):
+		success,result = resultinfo
+		
+		if success:
+			print "Connected to port %i" %port
+
+	reactor.stop()
+
+
+host = sys.argv[1]
+ports = range(1,201)
+
+testers = [testConnect(host,port) for port in ports]
+
+defer.DeferredList(testers,consumeErrors = True).addCallback(handleAllResults,ports)
+
+reactor.run()
