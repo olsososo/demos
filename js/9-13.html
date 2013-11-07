@@ -1,0 +1,579 @@
+<html>
+<head>
+</head>
+<body>
+<input type="button" id="button" value="button">
+<a href="http://www.baidu.com" id="myLink">link</a>
+<div style="background-color:#dddddd;width:200px;height:200px" id="mydiv"></div>
+<input type="text" id="mytext" size=80><br>
+<textarea id="ta"></textarea><br>
+<ul id="mylist">
+    <li>item 1</li>
+    <li>item 2</li>
+    <li>item 3</li>
+    <li>item 4</li>
+</ul>
+
+<div id="div" style="background-color:#dddddd">Right click or ctrl+click me to get a custom context menu.click anywhere else to get the default context menu. 
+<ul id="mymenu" style="position:absolute;visibility:hidden;background-color:silver">
+    <li><a href="#">A</a></li>
+    <li><a href="#">B</a></li>
+    <li><a href="#">C</a></li>
+</ul>
+</div>
+
+<ul id="mylinks">
+<li id="goSomewhere">Go somewhere</li>
+<li id="doSomething">Do something</li>
+<li id="sayHi">Say Hi</li>
+</ul>
+
+<script type="text/javascript">
+
+// with(document){
+//     var button = querySelector("#button");
+//     button.onclick = function(event){
+//         w(event.type);
+//     }
+
+//     var handler = function (){
+//         alert(this.id);
+//     };
+
+//     button.addEventListener("mouseover",handler,false);
+//     //button.removeEventListener("mouseover",handler,false); //如果handler换为匿名函数将会失效
+// }
+var  client = function(){
+
+    var engine = {
+        ie: 0,
+        gecko: 0,
+        webkit: 0,
+        khtml: 0,
+        opera: 0,
+        ver: null
+    };
+
+    var browser = {
+        ie: 0,
+        firefox: 0,
+        safari: 0,
+        konq: 0,
+        opera: 0,
+        chrome: 0,
+        ver: null
+    };
+
+    var system = {
+        win: false,
+        max: false,
+        x11: false,
+
+        iphone: false,
+        ipod: false,
+        ipad: false,
+        ios: false,
+        android: false,
+        nokiaN: false,
+        winMobile: false,
+
+        wii: false,
+        ps:false
+    };
+
+    var ua = navigator.userAgent;
+
+    if(window.opera){
+        engine.ver = browser.ver = window.opera.version();
+        engine.opera = browser.opera = parseFloat(engine.ver);
+
+    }else if(/AppleWebKit\/(\S+)/.test(ua)){
+        engine.ver = RegExp["$1"];
+        engine.webkit = parseFloat(engine.ver);
+        
+        if(/Chrome\/(\S+)/.test(ua)){
+            browser.ver = RegExp["$1"];
+            browser.chrome = parseFloat(browser.ver);
+        
+        }else if(/Version\/(\S+)/.test(ua)){
+            browser.ver = RegExp["$1"];
+            browser.safari = parseFloat(browser.ver);
+        
+        }else{
+            var safariVersion = 1;
+            if(engine.webkit < 100){
+                safariVersion = 1;
+            }else if(engine.webkit < 312){
+                safariVersion = 1.2;
+            }else if(engine.webkit < 412){
+                safariVersion = 1.3;
+            }else{
+                safariVersion = 2;
+            }
+
+            browser.safari = browser.ver = safariVersion;
+        }
+
+    }else if(/KHTML\/(\S+)/.test(ua) || /Konqueror\/([^;]+)/.test(ua)){
+        engine.ver = browser.ver = RegExp["$1"];
+        engine.khtml = browser.konq = parseFloat(engine.ver);
+
+    }else if(/rv:([^\)]+)\) Gecko\/\d{8}/.test(ua)){
+        engine.ver = RegExp["$1"];
+        engine.gecko = parseFloat(engine.ver);
+
+        if(/Firefox\/(\S+)/.test(ua)){
+            browser.ver = RegExp["$1"];
+            browser.firefox = parseFloat(browser.ver);
+        }
+    
+    }else if(/MSIE ([^;]+)/.test(ua)){
+        engine.ver = browser.ver = RegExp["$1"];
+        engine.ie = browser.ie = parseFloat(engine.ver);
+    }
+
+    var p = navigator.platform;
+    system.win = p.indexOf("Win") == 0;
+    system.mac = p.indexOf("Mac") == 0;
+    system.x11 = (p == "X11") || (p.indexOf("Linux") == 0);
+
+    if(system.win){
+        if(/Win(?:dows )?([^do](2))\s?(\d+\.\d+)/.test(ua)){
+            if(RegExp["$1"] == "NT"){
+                switch(RegExp["$2"]){
+                    case "5.0":
+                        system.win = "2000";
+                        break;
+                    case "5.1":
+                        system.win = "XP";
+                        break;
+                    case "6.0":
+                        system.win = "Vista";
+                        break;
+                    case "6.1":
+                        system.win = "7";
+                        break;
+                    default:
+                        system.win = "NT";
+                        break;
+                }
+
+            }else if(RegExp["$1"] == "9x"){
+                system.win = "ME";
+            
+            }else{
+                system.win = RegExp["$1"];
+            }
+        }
+    }
+
+    system.iphone = ua.indexOf("iPhone") > -1;
+    system.ipod = ua.indexOf("iPod") > -1;
+    system.ipad = ua.indexOf("iPad") > -1;
+    system.nokiaN = ua.indexOf("NokiaN") > -1;
+
+    if(system.win == "CE"){
+        system.winMobile = system.win;
+
+    }else if(system.win == "Ph"){
+        if(/Windows Phone OS (\d+.\d+)/.test(ua)){
+            system.win = "Phone";
+            system.winMobile = parseFloat(RegExp["$1"]);
+        }
+    }
+
+    if(system.mac && ua.indexOf("Mobile") > -1){
+        if(/CPU (?:iPhone )?OS (\d+_\d+)/.test(ua)){
+            system.ios = parseFloat(RegExp.$1.replace("_","."));
+        }else{
+            system.ios = 2;
+        }
+    }
+
+    if(/Android (\d+\.\d+)/.test(ua)){
+        system.android = parseFloat(RegExp.$1);
+    }
+
+    system.wii = ua.indexOf("Wii") > -1;
+    system.ps = /playstation/i.test(ua);
+
+    return {
+        engine: engine,
+        browser: browser,
+        system: system
+    };
+}();
+
+var EventUtil = {
+    addHandler: function(element,type,handler){
+        if(element.addEventListener){
+            element.addEventListener(type,handler,false);
+        }else if(element.attachEvent){
+            element.attachEvent("on"+type,handler);
+        }else{
+            element["on"+type] = handler;
+        }
+    },
+
+    getEvent: function(event){
+        return event ? event : window.event;
+    },
+
+    getRelatedTarget: function(event){
+        if(event.relatedTarget){
+            return event.relatedTarget;
+        }else if(event.toElement){
+            return event.toElement;
+        }else if(event.fromElement){
+            return event.fromElement;
+        }else{
+            return null;
+        }
+    },
+
+    getTarget: function(event){
+        return event.target || event.srcElement;
+    },
+
+    getButton: function(event){
+        if(document.implementation.hasFeature("MouseEvents","2.0")){
+            return event.button; //o left 1 center 2 right
+        }else{
+            switch(event.button){
+                case 0:
+                case 1:
+                case 3:
+                case 5:
+                case 7:
+                    return 0;
+                case 2:
+                case 6:
+                    return 2;
+                case 4:
+                    return 1;
+            }
+        }
+    },
+
+    getWheelDelta: function(event){
+        if(event.wheelDelta){
+            return (client.engine.opera && client.engine.opera < 9.5 ?  -event.wheelDelta : event.wheelDelta); 
+        }else{
+            return -event.detail*40;
+        }
+    },
+
+    getChar: function(event){
+        if(typeof event.charCode == "number"){
+            return event.charCode;
+        }else{
+            return event.keyCode;
+        }
+    },
+
+    preventDefault: function(event){
+        if(event.preventDefault){
+            event.preventDefault();
+        }else{
+            event.returnValue = false;
+        }
+    },
+
+    stopPropagation: function(event){
+        if(event.stopPropagation){
+            event.stopPropagation();
+        }else{
+            event.cancelBubble = true;
+        }
+    },
+
+    removeHander: function(element,type,handler){
+        if(element.removeEventListener){
+            element.removeEventListener(type,handler,false);
+        }else if(element.detachEvent){
+            element.detachEvent("on"+type,handler);
+        }else{
+            element["on"+type] = handler;
+        }
+    }
+};
+
+var btn = document.getElementById("button");
+
+// var handler = function(){
+//     //alert("clicked");
+// }
+
+// //EventUtil.addHandler(btn,"click",handler);
+
+// btn.onclick = function(event){
+//     //alert(event.target);
+// }
+
+// //btn.addEventListener('click',function(event){
+//     //alert(event.type);
+// //},false);
+
+// var handler = function(event){
+//     switch(event.type){
+//         case "click":
+//             alert("clicked");
+//             alert(event.eventPhase);
+//             event.stopPropagation(); //阻止冒泡
+//             break;
+//         case "mouseover":
+//             event.target.style.backgroundColor = "red";
+//             break;
+//         case "mouseout":
+//             event.target.style.backgroundColor = "";
+//             break;
+//     }
+// }
+
+// //btn.onclick = handler;
+// //btn.onmouseover = handler;
+// //btn.onmouseout = handler;
+
+// var link = document.querySelector("#mylink");
+// link.onclick = function(event){
+//     //alert(event.type);
+//     //event.preventDefault();
+// }
+
+// //ie下,event对象作为window的属性存在(dom0)
+// btn.onclick = function(){
+//     //var event = window.event;
+//     //alert(event.type);
+// }
+
+// document.body.onclick = function(event){
+//     //alert('clicked');
+// }
+
+btn.onclick = function(event){
+    event = EventUtil.getEvent(event);
+    //alert(EventUtil.getTarget(event));
+    //alert(event.clientX);
+
+    var keys = new Array();
+
+    if(event.shiftKey){
+        keys.push("shift");
+    }
+
+    if(event.ctrlKey){
+        keys.push("ctrl");
+    }
+
+    if(event.altKey){
+        keys.push("alt");
+    }
+
+    if(event.metaKey){
+        keys.push('meta');
+    }
+
+    alert("Keys: "+keys.join(','));
+    EventUtil.stopPropagation(event);
+}
+
+document.body.onclick = function(){
+    document.body.onclick = null; //移除事件处理程序
+    //alert('Bubble');
+}
+
+EventUtil.addHandler(window,'load',function(event){
+    //alert(event.type);
+});
+
+EventUtil.addHandler(window,'resize',function(event){
+    //alert(event.type);
+});
+
+EventUtil.addHandler(window,'mousedown',function(event){
+    //alert(event.type);
+});
+
+var div = document.getElementById("mydiv");
+EventUtil.addHandler(div,'mouseenter',function(event){
+    //alert(event.type); //外部首次移动到元素范围之内时触发
+});
+
+EventUtil.addHandler(div,'mouseleave',function(event){
+    //alert(event.type); //鼠标移动到元素范围之外时触发
+});
+
+EventUtil.addHandler(div,'mousemove',function(event){
+    btn.value = event.clientX; //鼠标在元素内部移动时触发
+});
+
+EventUtil.addHandler(div,'mousedown',function(event){
+    event = EventUtil.getEvent(event);
+    alert(EventUtil.getButton(event));
+});
+
+EventUtil.addHandler(div,'mouseout',function(event){
+    //alert(event.type); //鼠标首次移入另一元素边界之内时触发
+    event = EventUtil.getEvent(event);
+    var target = EventUtil.getTarget(event);
+    var relatedTarget = EventUtil.getRelatedTarget(event);
+    alert("Moused to of " + target.tagName + " to " + relatedTarget.tagName);
+});
+
+EventUtil.addHandler(div,'mouseup',function(event){
+    btn.value = "button";
+});
+
+function handlerMouseWheel(event){
+    var event = EventUtil.getEvent(event);
+    //alert(EventUtil.getWheelDelta(event));
+};
+
+EventUtil.addHandler(document,"mousewheel",handlerMouseWheel);
+EventUtil.addHandler(document,"DOMMouseScroll",handlerMouseWheel);
+
+
+//keydown 任意键 keypress 字符键 up 释放按键
+var mytext = document.getElementById('mytext');
+EventUtil.addHandler(mytext,'keypress',function(event){
+    event = EventUtil.getEvent(event);
+    //alert(EventUtil.getChar(event));
+})
+
+var ta = document.getElementById('ta');
+
+EventUtil.addHandler(ta,'textInput',function(event){
+    event = EventUtil.getEvent(event);
+    alert(event.data);
+});
+
+EventUtil.addHandler(window,'load',function(event){
+    var list = document.getElementById('mylist');
+    var div = document.getElementById('div');
+
+    //alert("load");
+
+    EventUtil.addHandler(document,"DOMSubtreeModified",function(event){
+        //alert(event.type);
+        //alert(event.target);
+    });
+
+    EventUtil.addHandler(document,"DOMNodeRemoved",function(event){
+        // alert(event.type);
+        // alert(event.target);
+        // alert(event.relatedNode);
+    });
+
+    EventUtil.addHandler(list.firstChild,"DOMNodeRemovedFromDocument",function(event){
+        // alert(event.type);
+        // alert(event.target);
+    });
+
+    //右键菜单
+    EventUtil.addHandler(div,'contextmenu',function(event){
+        event = EventUtil.getEvent(event);
+        EventUtil.preventDefault(event);
+
+        var mymenu = document.getElementById('mymenu');
+        mymenu.style.left = event.clientX + "px";
+        mymenu.style.top = event.clientY + "px";
+        mymenu.style.visibility = "visible";
+    });
+
+    EventUtil.addHandler(document,'click',function(event){
+        document.getElementById('mymenu').style.visibility = "hidden";
+    });
+});
+
+//window load事件会在页面的一切加载(包括外部资源)完成时触发
+//DOMContentLoaded事件则在形成完整的DOM树之后触发 不理会图像 js css文件
+EventUtil.addHandler(document,"DOMContentLoaded",function(event){
+    //alert("Content loaded");
+});
+
+//readyState: unintialized(未初始化) loading(正在加载) loaded(加载完成) 
+//interactive(交互) complete(完成) 
+
+EventUtil.addHandler(window,"hashchange",function(event){
+    alert("Old URL:" + event.oldURL+"\nnew URL"+event.newURL);
+});
+
+function handlerTouchEvent(event){
+    if(event.touches.length == 1){
+        var output = document.getElementById('output');
+        switch(event.type){
+            case "touchstart":
+            output.innerHTML = "Touch start (" + event.Touches[0].clientX + "," + event.Touch[0].clientY +")";
+            break;
+
+            case "touchend":
+            output.innerHTML += "<br>Touch ended("+event.changeTouches[0].clientX+","+event.changeTouches[0].clientY+")";
+            break;
+
+            case "touchmove":
+                event.preventDefault();
+                output.innerHTML += "<br>Touch moved("+event.changeTouches[0].clientX+","+event.changeTouches[0].clientY+")"; 
+            break;              
+        }
+    }
+}
+
+EventUtil.addHandler(document,"touchstart",handlerTouchEvent);
+EventUtil.addHandler(document,"touchend",handlerTouchEvent);
+EventUtil.addHandler(document,"touchmove",handlerTouchEvent);
+
+var mylinks = document.getElementById('mylinks');
+EventUtil.addHandler(mylinks,'click',function(event){
+    event = EventUtil.getEvent(event);
+    var target = EventUtil.getTarget(event);
+
+    switch(target.id){
+        case "doSomething":
+            document.title = "I changed the document's title";
+            break;
+
+        case "goSomewhere":
+            location.href = "http://www.wrox.com";
+            break;
+
+        case "sayHi":
+            alert("hi");
+            break;
+    }
+});
+
+
+//模拟鼠标事件
+var event = document.createEvent("MouseEvents");
+event.initMouseEvent("click",true,true,document.defaultView,0,0,0,0,0,false,false,true,false,0,null);
+//btn.dispatchEvent(event);
+
+//模拟键盘事件
+var tas = document.getElementById('ta');
+var event = document.createEvent("KeyEvents");
+event.initKeyEvent("keypress",true,true,document.defaultView,false,false,false,false,65,65);
+tas.dispatchEvent(event);
+
+//自定义事件
+var mydiv = document.getElementById('mydiv');
+EventUtil.addHandler(mydiv,'myevent',function(event){
+    //alert("div:"+event.detail);
+});
+
+EventUtil.addHandler(document,'myevent',function(event){
+    //alert("document:"+event.detail);
+});
+
+if(document.implementation.hasFeature('CustomEvent',"3.0")){
+    event = document.createEvent("CustomEvent");
+    event.initCustomEvent('myevent',true,false,'Hello world!');
+    div.dispatchEvent(event);
+}
+
+function w(message){
+    document.writeln(message);
+}
+</script>
+
+</body>
+</html>
