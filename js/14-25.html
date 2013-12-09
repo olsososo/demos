@@ -1,0 +1,939 @@
+<html>
+<head>
+<script type="text/javascript">
+var  client = function(){
+
+    var engine = {
+        ie: 0,
+        gecko: 0,
+        webkit: 0,
+        khtml: 0,
+        opera: 0,
+        ver: null
+    };
+
+    var browser = {
+        ie: 0,
+        firefox: 0,
+        safari: 0,
+        konq: 0,
+        opera: 0,
+        chrome: 0,
+        ver: null
+    };
+
+    var system = {
+        win: false,
+        max: false,
+        x11: false,
+
+        iphone: false,
+        ipod: false,
+        ipad: false,
+        ios: false,
+        android: false,
+        nokiaN: false,
+        winMobile: false,
+
+        wii: false,
+        ps:false
+    };
+
+    var ua = navigator.userAgent;
+
+    if(window.opera){
+        engine.ver = browser.ver = window.opera.version();
+        engine.opera = browser.opera = parseFloat(engine.ver);
+
+    }else if(/AppleWebKit\/(\S+)/.test(ua)){
+        engine.ver = RegExp["$1"];
+        engine.webkit = parseFloat(engine.ver);
+        
+        if(/Chrome\/(\S+)/.test(ua)){
+            browser.ver = RegExp["$1"];
+            browser.chrome = parseFloat(browser.ver);
+        
+        }else if(/Version\/(\S+)/.test(ua)){
+            browser.ver = RegExp["$1"];
+            browser.safari = parseFloat(browser.ver);
+        
+        }else{
+            var safariVersion = 1;
+            if(engine.webkit < 100){
+                safariVersion = 1;
+            }else if(engine.webkit < 312){
+                safariVersion = 1.2;
+            }else if(engine.webkit < 412){
+                safariVersion = 1.3;
+            }else{
+                safariVersion = 2;
+            }
+
+            browser.safari = browser.ver = safariVersion;
+        }
+
+    }else if(/KHTML\/(\S+)/.test(ua) || /Konqueror\/([^;]+)/.test(ua)){
+        engine.ver = browser.ver = RegExp["$1"];
+        engine.khtml = browser.konq = parseFloat(engine.ver);
+
+    }else if(/rv:([^\)]+)\) Gecko\/\d{8}/.test(ua)){
+        engine.ver = RegExp["$1"];
+        engine.gecko = parseFloat(engine.ver);
+
+        if(/Firefox\/(\S+)/.test(ua)){
+            browser.ver = RegExp["$1"];
+            browser.firefox = parseFloat(browser.ver);
+        }
+    
+    }else if(/MSIE ([^;]+)/.test(ua)){
+        engine.ver = browser.ver = RegExp["$1"];
+        engine.ie = browser.ie = parseFloat(engine.ver);
+    }
+
+    var p = navigator.platform;
+    system.win = p.indexOf("Win") == 0;
+    system.mac = p.indexOf("Mac") == 0;
+    system.x11 = (p == "X11") || (p.indexOf("Linux") == 0);
+
+    if(system.win){
+        if(/Win(?:dows )?([^do](2))\s?(\d+\.\d+)/.test(ua)){
+            if(RegExp["$1"] == "NT"){
+                switch(RegExp["$2"]){
+                    case "5.0":
+                        system.win = "2000";
+                        break;
+                    case "5.1":
+                        system.win = "XP";
+                        break;
+                    case "6.0":
+                        system.win = "Vista";
+                        break;
+                    case "6.1":
+                        system.win = "7";
+                        break;
+                    default:
+                        system.win = "NT";
+                        break;
+                }
+
+            }else if(RegExp["$1"] == "9x"){
+                system.win = "ME";
+            
+            }else{
+                system.win = RegExp["$1"];
+            }
+        }
+    }
+
+    system.iphone = ua.indexOf("iPhone") > -1;
+    system.ipod = ua.indexOf("iPod") > -1;
+    system.ipad = ua.indexOf("iPad") > -1;
+    system.nokiaN = ua.indexOf("NokiaN") > -1;
+
+    if(system.win == "CE"){
+        system.winMobile = system.win;
+
+    }else if(system.win == "Ph"){
+        if(/Windows Phone OS (\d+.\d+)/.test(ua)){
+            system.win = "Phone";
+            system.winMobile = parseFloat(RegExp["$1"]);
+        }
+    }
+
+    if(system.mac && ua.indexOf("Mobile") > -1){
+        if(/CPU (?:iPhone )?OS (\d+_\d+)/.test(ua)){
+            system.ios = parseFloat(RegExp.$1.replace("_","."));
+        }else{
+            system.ios = 2;
+        }
+    }
+
+    if(/Android (\d+\.\d+)/.test(ua)){
+        system.android = parseFloat(RegExp.$1);
+    }
+
+    system.wii = ua.indexOf("Wii") > -1;
+    system.ps = /playstation/i.test(ua);
+
+    return {
+        engine: engine,
+        browser: browser,
+        system: system
+    };
+}();
+
+var EventUtil = {
+    addHandler: function(element,type,handler){
+        if(element.addEventListener){
+            element.addEventListener(type,handler,false);
+        }else if(element.attachEvent){
+            element.attachEvent("on"+type,handler);
+        }else{
+            element["on"+type] = handler;
+        }
+    },
+
+    getEvent: function(event){
+        return event ? event : window.event;
+    },
+
+    getRelatedTarget: function(event){
+        if(event.relatedTarget){
+            return event.relatedTarget;
+        }else if(event.toElement){
+            return event.toElement;
+        }else if(event.fromElement){
+            return event.fromElement;
+        }else{
+            return null;
+        }
+    },
+
+    getTarget: function(event){
+        return event.target || event.srcElement;
+    },
+
+    getButton: function(event){
+        if(document.implementation.hasFeature("MouseEvents","2.0")){
+            return event.button; //o left 1 center 2 right
+        }else{
+            switch(event.button){
+                case 0:
+                case 1:
+                case 3:
+                case 5:
+                case 7:
+                    return 0;
+                case 2:
+                case 6:
+                    return 2;
+                case 4:
+                    return 1;
+            }
+        }
+    },
+
+    getWheelDelta: function(event){
+        if(event.wheelDelta){
+            return (client.engine.opera && client.engine.opera < 9.5 ?  -event.wheelDelta : event.wheelDelta); 
+        }else{
+            return -event.detail*40;
+        }
+    },
+
+    getChar: function(event){
+        if(typeof event.charCode == "number"){
+            return event.charCode;
+        }else{
+            return event.keyCode;
+        }
+    },
+
+    getClipboardText: function(event){
+        var clipboardData = (event.clipboardData || window.clipboardData);
+        return clipboardData.getData("text");
+    },
+
+    setCliboardText: function(event,value){
+        if(event.clipboardData){
+            return event.clipboardData.setData("text/plain",value);
+        }else if(window.clipboardData){
+            return window.clipboardData.setData("text",value);
+        }
+    },
+
+    preventDefault: function(event){
+        if(event.preventDefault){
+            event.preventDefault();
+        }else{
+            event.returnValue = false;
+        }
+    },
+
+    stopPropagation: function(event){
+        if(event.stopPropagation){
+            event.stopPropagation();
+        }else{
+            event.cancelBubble = true;
+        }
+    },
+
+    removeHander: function(element,type,handler){
+        if(element.removeEventListener){
+            element.removeEventListener(type,handler,false);
+        }else if(element.detachEvent){
+            element.detachEvent("on"+type,handler);
+        }else{
+            element["on"+type] = handler;
+        }
+    }
+};
+</script>
+</head>
+<body>
+<form action="#" method="get" id="myform">
+<input type="text" name="text"><br>
+<input type="text" name="tell" id="txtTel1" maxLength="3" pattern="\d+" ><br>
+<input type="text" name="tel2" id="txtTel2" maxLength="3" ><br>
+<input type="text" name="tel3" id="txtTel3" maxLength="4" required ><br>
+<select name="location" id="selLocation" >
+    <option value="Sunnyvale,CA">Sunnyvale</option>
+    <option value="Los Angeles,CA">Los Angeles</option>
+    <option value="Mountain View">Mountain View</option>
+</select>
+<input type="submit" value="submit form">
+<button type="submit">submit form</button>
+</form>
+
+<canvas id="drawing" width="200px" height="200px" >A drawing of something.</canvas>
+
+<iframe src="./8-13.html" id="myframe" width="100%" height="200px"></iframe>
+
+
+<div id="droptarget"></div>
+
+<input type="button" id="mybutton" value="button" >&nbsp;
+<input type="button" id="yourbutton" value="button"><span id="hello" style="display:none">Hello world!</span>
+
+<div>
+    <input type="text" id="name" placeholder="Name"><br>
+    <input type="email" id="email" placeholder="Email"><br>
+    <button id="addButton">Add Data</button><br>
+    <select id="key">
+        <option value="1">1</option>
+    </select>
+    <button id="getButton">Get Data</button>
+    <span id="status"></span>
+</div>
+
+<div id="move" style="background-color:green;border-radius:25px;width:50px;height:50px;left:10;position:absolute"></div>
+<input type="file" id="file-list" multiple="multiple" />
+
+<div id ="output"></div>
+<div id="progress"></div>
+<div style="margin-top:100px;width:100px;height:100px;border:1px solid" id="droptarget2"></div>
+
+<script type="text/javascript">
+var form = document.getElementById("myform");
+var text = form.elements['text'];
+//form.submit();
+
+EventUtil.addHandler(form,'submit',function(event){
+    event = EventUtil.getEvent(event);
+    EventUtil.preventDefault(event);
+});
+
+EventUtil.addHandler(text,'focus',function(event){
+    event = EventUtil.getEvent(event);
+    var target = EventUtil.getTarget(event);
+
+    //target.select();
+})
+
+EventUtil.addHandler(text,'select',function(event){
+    var value = getSelectedText(text);
+    //alert(value);
+});
+
+//文本选中效果
+function selectText(text,startIndex,stopIndex){
+    if(text.setSelectionRange){
+        text.setSelectionRange(startIndex,stopIndex);
+    }else if(text.createTextRange){
+        var range = text.createTextRange();
+        range.collapase(true);
+        range.moveStart("character",0);
+        range.moveEnd("character",stopIndex,startIndex);
+        range.select();
+    }
+
+    text.focus();
+}
+
+text.value = "hello world!";
+//selectText(text,0,3);
+
+EventUtil.addHandler(text,'keypress',function(event){
+    event = EventUtil.getEvent(event);
+    //EventUtil.preventDefault(event);
+});
+
+EventUtil.addHandler(text,'paste',function(event){
+    event = EventUtil.getEvent(event);
+    var text = EventUtil.getClipboardText(event);
+
+    //只允许复制数字
+    if(!/^\d*$/.test(text)){
+        EventUtil.preventDefault(event);
+    }
+});
+
+(function(){
+    function tabForward(event){
+        event = EventUtil.getEvent(event);
+        var target = EventUtil.getTarget(event);
+
+        if(target.value.length == target.maxLength){
+            var form = target.form;
+
+            //判断当前元素 切换到下一元素
+            for(var i=0,len=form.elements.length;i < len;i++){
+                if(form.elements[i] == target){
+                    if(form.elements[i+1]){
+                        form.elements[i+1].focus();
+                    }
+                    return;
+                }
+            }
+        }
+    }
+
+    var textbox1 = document.getElementById('txtTel1');
+    var textbox2 = document.getElementById('txtTel2');
+    var textbox3 = document.getElementById('txtTel3');
+
+    //textbox3.type = "email";
+    //var isEmailSupported = (textbox3.type == "email");
+
+    EventUtil.addHandler(textbox1,'keyup',tabForward);
+    EventUtil.addHandler(textbox2,'keyup',tabForward);
+    EventUtil.addHandler(textbox3,'keyup',tabForward);
+})();
+
+var selectbox = document.forms[0].elements['location'];
+var text = selectbox.options[0].text;
+var value = selectbox.options[0].value;
+
+var newOption = new Option("Option text","Option value");
+selectbox.add(newOption,undefined);
+//selectbox.remove(0);
+
+EventUtil.addHandler(selectbox,'change',function(event){
+    event = EventUtil.getEvent(event);
+    var selectOption = selectbox.options[selectbox.selectedIndex];
+    alert(selectOption.text);
+})
+
+var drawing = document.getElementById('drawing');
+
+if(drawing.getContext){
+    var context = drawing.getContext('2d');
+    //context.fillStyle = '#ff0000';
+    //context.fillRect(10,10,50,50);
+
+    //context.fillStyle = "rgba(0,0,255,0.5)";
+    //context.fillRect(30,30,50,50);
+
+    //context.clearRect(40,40,10,10);
+
+    context.beginPath();
+    context.arc(100,100,99,0,2*Math.PI,false);
+
+    context.moveTo(194,100);
+    context.arc(100,100,94,0,2*Math.PI,false);
+
+    //将坐标原点移动到100 100 即0 0 => 100 100
+    context.translate(100,100);
+
+    context.moveTo(0,0);
+    context.lineTo(0,-85);
+
+    context.moveTo(0,0);
+    context.lineTo(-35,0);
+
+    //context.stroke();
+
+    context.font = "bold 14px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText("12",0,-80);
+}
+
+var iframeWindow = document.getElementById('myframe').contentWindow;
+iframeWindow.postMessage("A secret","*");
+
+EventUtil.addHandler(window,'message',function(event){
+    alert(event.origin);
+});
+
+var droptarget = document.getElementById('droptarget');
+EventUtil.addHandler(droptarget,'dragover',function(event){
+    EventUtil.preventDefault(event);
+});
+
+EventUtil.addHandler(droptarget,'dragenter',function(event){
+    EventUtil.preventDefault(event);
+});
+
+//捕获错误
+window.onerror = function(message, url, line){
+    alert(message);
+};
+
+//图片加载失败
+var image = new Image();
+EventUtil.addHandler(image,'load',function(event){
+    //alert('image loaded!');
+});
+
+EventUtil.addHandler(image,'error',function(event){
+    //alert('image not loaded!');
+});
+
+image.src = 'smilex.gif';
+
+var parser = new DOMParser();
+var xmldom = parser.parseFromString("<root><child/></root>","text/xml");
+
+//alert(xmldom.documentElement.tagName);
+//alert(xmldom.documentElement.firstChild.tagName);
+
+var serializer = new XMLSerializer();
+var xml = serializer.serializeToString(xmldom);
+//alert(xml);
+
+var book = {
+    title: "Professional Javascript",
+    authors: [
+        "nicholas C. zxkas"
+    ],
+    edition: 3,
+    year: 2001
+};
+
+//javascript对象序列化为json字符串
+var jsonText = JSON.stringify(book);
+//alert(jsonText);
+
+//json字符串解析为原生的javascript值
+var bookCopy = JSON.parse(jsonText);
+//alert(bookCopy);
+
+//判断是不是函数
+function isFunction(value){
+    return Object.prototype.toString.call(value) == "[object Function]";
+}
+
+//判断是不是正则
+function isRegExp(value){
+    return Object.prototype.toString.call(value) == "[object RegExp]";
+}
+
+//alert(isFunction(getSelectedText));
+
+//function Person(name,age,job){
+//    this.name = name;
+//    this.age = age;
+//    this.job = job;
+//}
+
+//如果没有使用new this对象会映射到全局对象window上
+//var person = Person("Nicholas",29,"Software Engineer");
+//alert(window.name);
+
+//作用域安全的构造函数
+function Person(age,job){
+    if(this instanceof Person){
+        this.age = age;
+        this.job = job;
+    }else{
+        return new Person(age,job);
+    }
+}
+
+var person = new Person(29,"Software Engineer");
+
+function add(num1,num2){
+    return num1 + num2;
+}
+
+// function curriedAdd(num2){
+//     return add(5,num2);
+// }
+
+//alert(curriedAdd(3));
+
+//函数柯里化 用于创建已经设置好一个或多个参数的函数
+function curry(fn){
+    var args = Array.prototype.slice.call(arguments,1);
+    return function(){
+        var innerArgs = Array.prototype.slice.call(arguments);
+        var finalArgs = args.concat(innerArgs);
+        return fn.apply(null,finalArgs);
+    }
+}
+
+var curriedAdd = curry(add,5);
+//alert(curriedAdd(3));
+
+function bind(fn,context){
+    var args = Array.prototype.slice.call(arguments,2); //mybutton
+    return function(){
+        var innerArgs = Array.prototype.slice.call(arguments);
+        var finalArgs = args.concat(innerArgs);
+        return fn.apply(context,finalArgs); //apply(obj=>this,arguments)
+    }
+}
+
+var handler = {
+    message: "Event handler",
+    handlerClick: function(name,event){
+        alert(this.message + ":" + name + ":" + event.type);
+    }
+};
+
+var mybutton = document.getElementById('mybutton');
+EventUtil.addHandler(mybutton,'click',bind(handler.handlerClick,handler,"mybutton"));
+
+//不可扩展对象
+var person = {name:"Nicholas"};
+Object.preventExtensions(person);
+
+//person.age = 29;
+//alert(person.age);
+
+//密封对象
+var person = {name:"Nicholas"};
+Object.seal(person);
+
+//person.age = 29;
+//alert(person.age);
+
+//冻结对象
+//Object.freeze(person);
+
+//代码会在250ms后被加入到队列中
+var yourbutton = document.getElementById('yourbutton');
+yourbutton.onclick = function(){
+    setTimeout(function(){
+        document.getElementById('hello').style.display = 'inline'; 
+    },250)
+}
+
+//setInterval重复定时器 
+//使用setInterval创建的定时器确保了定时器代码规则的插入到队列中
+//定时器代码可能在代码再次被添加到队列之前还没有完成执行 结果定时器代码连续运行n次
+//为了避免这个问题 interval仅当没有该定时器的任何代码实例时 才将定时器代码添加到队列中
+
+//最合理的重复定时器
+setTimeout(function(){
+    var move = document.getElementById('move');
+    left = parseInt(move.style.left) + 5;
+    move.style.left = left + "px";
+    if(left < 200){
+        setTimeout(arguments.callee,50);
+    }
+},50)
+
+function EventTarget(){
+    this.handlers = {};
+}
+
+EventTarget.prototype = {
+    constructor: EventTarget,
+    addHandler: function(type,handler){
+        if(typeof this.handlers[type] == "undefined"){
+            this.handlers[type] = [];
+        }
+        this.handlers[type].push(handler);
+    },
+
+    fire: function(event){
+        if(!event.target){
+            event.target = this;
+        }
+        if(this.handlers[event.type] instanceof Array){
+            var handlers = this.handlers[event.type];
+            for(var i=0,len=handlers.length;i<len;i++){
+                handlers[i](event);
+            }
+        }
+    },
+
+    removeHander: function(type,handler){
+        if(this.handlers[type] instanceof Array){
+            var handlers = this.handlers[type];
+            for(var i=0,len=handlers.length;i<len;i++){
+                if(handlers[i] === handler){
+                    break;
+                }
+            }
+            handlers.splice(i,1);
+        }
+    }
+}
+
+function handleMessage(event){
+    //alert("Message received:"+event.message);
+}
+
+var target = new EventTarget();
+target.addHandler("message",handleMessage);
+target.fire({type:"message",message:"Hello world!"});
+target.removeHander("message",handleMessage);
+target.fire({type:"message",message:"Hello world!"});
+
+EventUtil.addHandler(window,"online",function(){
+    alert("online");
+});
+
+EventUtil.addHandler(window,"offline",function(){
+    alert("offline");
+});
+
+var indexedDB = window.indexedDB || window.msIndexedDB || window.mozIndexedDB || window.webkitIndexedDB;
+var openRequest = indexedDB.open("idarticle_people",2);
+var db;
+
+openRequest.onupgradeneeded = function(e){
+    console.log("upgrade...");
+    var thisDB = e.target.result;
+
+    if(!thisDB.objectStoreNames.contains('person')){
+        var objectStore = thisDB.createObjectStore('person',{autoIncrement:true});
+        objectStore.createIndex("name","name",{unique:false});
+        objectStore.createIndex("email","email",{unique:true});
+    }
+}
+
+openRequest.onsuccess = function(e){
+    console.log("success!");
+    db = e.target.result;
+    document.querySelector("#addButton").addEventListener('click',addPerson,false);
+}
+
+openRequest.onerror = function(e){
+    console.log('Error');
+    console.dir(e);
+}
+
+function addPerson(e){
+    var name = document.querySelector("#name").value;
+    var email = document.querySelector("#email").value;
+
+    console.log("About to add "+name+"/"+email);
+
+    var transaction = db.transaction(['person'],'readwrite');
+    var store = transaction.objectStore('person');
+
+    var person = {
+        name: name,
+        email: email,
+        created: new Date()
+    };
+
+    var reqtest = store.add(person,2);
+
+    reqtest.onerror = function(e){
+        console.log("Error",e.target.error.name);
+    }
+
+    reqtest.onsuccess = function(e){
+        console.log("Woot! Did it");
+    }
+}
+
+var getButton = document.querySelector("#getButton");
+getButton.addEventListener('click',getPerson,false);
+
+function getPerson(e){
+    // var key = document.querySelector("#key").value;
+    // if(key === "" || isNaN(key)) return;
+
+    // var transaction = db.transaction(['people'],'readonly');
+    // var store = transaction.objectStore('people');
+
+    // var request = store.get(Number(key));
+
+    // request.onsuccess = function(e){
+    //     var result = e.target.result;
+    //     console.dir(result);
+    //     if(result){
+    //         var s = "<h2>Key "+key+"</h2><p>";
+    //         for(var field in result){
+    //             s+= field+"="+result[field]+"<br>";
+    //         }
+    //         s+="</p>";
+    //         document.querySelector("#status").innerHTML = s;
+    //     }else{
+    //         document.querySelector("#status").innerHTML = "<h2>No match</h2>";
+    //     }
+    // }
+    var s = "";
+    db.transaction(["people"],"readonly").objectStore("people").openCursor().onsuccess = function(e){
+        var cursor = e.target.result;
+        if(cursor){
+            s += "<h2>Key"+cursor.key+"</h2><p>";
+            for(var field in cursor.value){
+                s += field+"="+cursor.value[field]+"<br>";
+            }
+            s += "</p>";
+            cursor.continue();
+        }
+        document.querySelector("#status").innerHTML = s;
+    }
+}
+
+var fileList = document.querySelector("#file-list");
+EventUtil.addHandler(fileList,'change',function(event){
+    var files = EventUtil.getTarget(event).files,
+        i = 0;
+        length = files.length;
+
+    while(i < length){
+        console.log(files[i].name+"("+files[i].type+":"+files[i].size+")");
+        i++;
+    }
+});
+
+function createObjectURL(blob){
+    if(window.URL){
+        return window.URL.createObjectURL(blob);
+    }else if(window.webkitURL){
+        return window.webkitURL.createObjectURL(blob);
+    }else{
+        return null;
+    }
+}
+
+EventUtil.addHandler(fileList,"change",function(event){
+    var info = "",
+        output = document.getElementById("output");
+        progress = document.getElementById("progress");
+        files = EventUtil.getTarget(event).files,
+        type = "default",
+        reader = new FileReader(),
+        url = createObjectURL(files[0]);
+
+    if(/image/.test(files[0].type)){
+        reader.readAsDataURL(files[0]);
+        type = "image";
+    }else{
+        reader.readAsText(files[0]);
+        type = "text";
+    }
+
+    reader.onerror = function(){
+        output.innerHTML = "Could not read file,error code is "+reader.error.code;
+    };
+
+    reader.onprogress = function(event){
+        if(event.lengthComputable){
+            progress.innerHTML = event.loaded + "/" + event.total;
+        }
+    };
+
+    reader.onload = function(){
+        var html = "";
+
+        switch(type){
+            case "image":
+                html = "<img src=\"" + reader.result + "\">";
+                //html = "<img src=\"" + url + "\">";
+                break;
+            case "text":
+                html = reader.result;
+                break;
+        }
+
+        output.innerHTML = html;
+    };
+});
+
+var droptarget2 = document.getElementById('droptarget2');
+
+function handleEvent(event){
+    var info = "",
+        output = document.getElementById('output'),
+        file,i,len;
+
+    EventUtil.preventDefault(event);
+
+    if(event.type == "drop"){
+        data = new FormData();
+        files = event.dataTransfer.files;
+        i = 0;
+        len = files.length;
+
+        while(i < len){
+            data.append("file"+i,files[i]);
+            info += files[i].name + "("+ files[i].type +"," + files[i].size+" bytes)<br>";
+            i++;
+        }
+
+        xhr = new XMLHttpRequest();
+        xhr.open("post","upload.php",true);
+        xhr.onreadystatechange = function(){
+            if(xhr.readyState == 4){
+                alert(xhr.responseText);
+            }
+        }
+        xhr.send(data);
+
+        output.innerHTML = info;
+    }
+}
+
+EventUtil.addHandler(droptarget2,"dragenter",handleEvent);
+EventUtil.addHandler(droptarget2,"dragover",handleEvent);
+EventUtil.addHandler(droptarget2,"drop",handleEvent);
+
+// function SuperType(){
+//     this.colors = ["red","blue","green"];
+// }
+
+// function SubType(){
+//     SuperType.call(this);
+// }
+
+// var instance1 = new SubType();
+// instance1.colors.push('black');
+//alert(instance1.colors);
+
+// var instance2 = new SubType();
+//alert(instance2.colors);
+
+function SuperType(name){
+    this.name = name;
+}
+
+function SubType(){
+    SuperType.call(this,"Nicholas");
+    this.age = 29;
+}
+
+// var instance = new SubType();
+// alert(instance.name);
+// alert(instance.age);
+
+function A(name){
+    this.name = name;
+    this.sayName = function(){
+        console.log(this.name);
+    }
+}
+
+function O(name){
+    A.call(this,name);
+}
+
+o = new O("Nicholas");
+o.sayName();
+
+//获取选中的文字
+function getSelectedText(textbox){
+    if(typeof textbox.selectionStart == "number"){
+        return textbox.value.substring(textbox.selectionStart,textbox.selectionEnd);
+    }else if(document.selection){
+        return document.selection.createRange().text;
+    }
+}
+
+function w(message){
+    document.writeln(message);
+}
+</script>
+</body>
+</html>
+
+
